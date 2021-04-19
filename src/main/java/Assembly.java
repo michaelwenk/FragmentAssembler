@@ -32,7 +32,7 @@ public class Assembly {
         System.out.println(ssc1.getHoseCodes()
                                .get(rootAtomIndexSSC1));
         final List<Integer> substructureAtomIndicesListHOSECodeSSC1 = Fragmentation.buildSubstructureAtomIndicesList(
-                ssc1.getStructure(), rootAtomIndexSSC1, 3);
+                ssc1.getStructure(), rootAtomIndexSSC1, maxSphere);
         System.out.println(substructureAtomIndicesListHOSECodeSSC1);
         final List<String> hoseCodeSpheresSSC1 = Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
                                                                                     .get(rootAtomIndexSSC1));
@@ -47,7 +47,7 @@ public class Assembly {
         System.out.println(ssc2.getHoseCodes()
                                .get(rootAtomIndexSSC2));
         final List<Integer> substructureAtomIndicesListHOSECodeSSC2 = Fragmentation.buildSubstructureAtomIndicesList(
-                ssc2.getStructure(), rootAtomIndexSSC2, 3);
+                ssc2.getStructure(), rootAtomIndexSSC2, maxSphere);
         System.out.println(substructureAtomIndicesListHOSECodeSSC2);
         final List<String> hoseCodeSpheresSSC2 = Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
                                                                                     .get(rootAtomIndexSSC2));
@@ -72,17 +72,17 @@ public class Assembly {
                 < matchingSphereCount; s++) {
             atomCount += Utils.countAtoms(hoseCodeSpheresSSC1.get(s));
         }
+        System.out.println("\n -> overlapping sphere count: "
+                                   + matchingSphereCount
+                                   + " with "
+                                   + atomCount
+                                   + " atoms");
         final Map<Integer, Integer> atomIndexMap = new HashMap<>();
         for (int i = 0; i
                 < atomCount; i++) {
             atomIndexMap.put(substructureAtomIndicesListHOSECodeSSC1.get(i),
                              substructureAtomIndicesListHOSECodeSSC2.get(i));
         }
-        System.out.println("\n -> overlapping sphere count: "
-                                   + matchingSphereCount
-                                   + " with "
-                                   + atomCount
-                                   + " atoms");
         System.out.println(" -> mapping: "
                                    + atomIndexMap);
         final boolean containsUnsaturatedAtomsSSC1 = atomIndexMap.keySet()
@@ -223,13 +223,6 @@ public class Assembly {
                     for (int i = 0; i
                             < atomIndicesToAddSSC2.get(parentAtomIndexSSC2Temp)
                                                   .size(); i++) {
-                        //                        final int parentAtomIndexSSC1 = atomIndexMap.entrySet()
-                        //                                                                    .stream()
-                        //                                                                    .filter(entry -> entry.getValue()
-                        //                                                                            == parentAtomIndexSSC2Temp)
-                        //                                                                    .map(Map.Entry::getKey)
-                        //                                                                    .findFirst()
-                        //                                                                    .get();
                         final int parentAtomIndexSSC1 = utils.Utils.findKeyInMap(atomIndexMap, parentAtomIndexSSC2Temp);
                         final int atomIndexToAddSSC2 = atomIndicesToAddSSC2.get(parentAtomIndexSSC2Temp)
                                                                            .get(i);
