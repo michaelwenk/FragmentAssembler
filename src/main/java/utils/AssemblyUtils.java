@@ -162,10 +162,10 @@ public class AssemblyUtils {
             return maxMatchingSphere;
         }
 
-        final List<String> HOSECodeSpheresSSC1 = hose.Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
-                                                                                         .get(atomIndexSSC1));
-        final List<String> HOSECodeSpheresSSC2 = hose.Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
-                                                                                         .get(atomIndexSSC2));
+        final List<String> HOSECodeSpheresSSC1 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
+                                                                                                     .get(atomIndexSSC1));
+        final List<String> HOSECodeSpheresSSC2 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
+                                                                                                     .get(atomIndexSSC2));
         for (int s = 0; s
                 < Integer.min(HOSECodeSpheresSSC1.size(), HOSECodeSpheresSSC2.size()); s++) {
             if (!HOSECodeSpheresSSC1.get(s)

@@ -1,10 +1,9 @@
+import casekit.nmr.hose.HOSECodeBuilder;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.DataSet;
 import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
 import casekit.nmr.utils.Utils;
-import hose.HOSECodeBuilder;
-import hose.model.ConnectionTree;
 import model.SSC;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtom;
@@ -180,7 +179,7 @@ public class Fragmentation {
      * @return
      *
      * @see HOSECodeBuilder#buildConnectionTree(IAtomContainer, int, Integer)
-     * @see HOSECodeBuilder#buildAtomContainer(ConnectionTree)
+     * @see HOSECodeBuilder#buildAtomContainer(casekit.nmr.hose.model.ConnectionTree)
      */
     public static IAtomContainer buildSubstructure(final IAtomContainer structure, final int rootAtomIndex,
                                                    final int maxSphere) {
@@ -202,8 +201,8 @@ public class Fragmentation {
      *
      * @see HOSECodeBuilder#buildConnectionTree(IAtomContainer, int, Integer)
      */
-    public static ArrayList<Integer> buildSubstructureAtomIndicesList(final IAtomContainer structure,
-                                                                      final int rootAtomIndex, final int maxSphere) {
+    public static List<Integer> buildSubstructureAtomIndicesList(final IAtomContainer structure,
+                                                                 final int rootAtomIndex, final int maxSphere) {
         return HOSECodeBuilder.buildConnectionTree(structure, rootAtomIndex, maxSphere)
                               .getKeys();
     }

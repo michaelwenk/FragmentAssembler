@@ -1,7 +1,7 @@
+import casekit.nmr.hose.Utils;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
-import hose.Utils;
 import model.SSC;
 import org.openscience.cdk.Bond;
 import org.openscience.cdk.depict.DepictionGenerator;

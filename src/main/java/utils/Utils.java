@@ -1,6 +1,6 @@
 package utils;
 
-import hose.HOSECodeBuilder;
+import casekit.nmr.hose.HOSECodeBuilder;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtomContainer;
 
