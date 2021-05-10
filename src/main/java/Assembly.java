@@ -1,4 +1,7 @@
+import casekit.nmr.hose.HOSECodeBuilder;
 import casekit.nmr.hose.Utils;
+import casekit.nmr.hose.model.ConnectionTree;
+import casekit.nmr.hose.model.ConnectionTreeNode;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
@@ -232,13 +235,13 @@ public class Assembly {
                         System.out.println(parentAtomIndexSSC1);
                         System.out.println(atomIndexToAddSSC2);
 
-                        final IBond bond = ssc2.getStructure()
-                                               .getBond(ssc2.getStructure()
-                                                            .getAtom(parentAtomIndexSSC2Temp), ssc2.getStructure()
-                                                                                                   .getAtom(
-                                                                                                           atomIndexToAddSSC2));
+                        IBond bond = ssc2.getStructure()
+                                         .getBond(ssc2.getStructure()
+                                                      .getAtom(parentAtomIndexSSC2Temp), ssc2.getStructure()
+                                                                                             .getAtom(
+                                                                                                     atomIndexToAddSSC2));
 
-                        final boolean isValidBondAddition = bond
+                        boolean isValidBondAddition = bond
                                 != null
                                 && casekit.nmr.Utils.isValidBondAddition(ssc1.getStructure(), parentAtomIndexSSC1,
                                                                          bond);
@@ -259,12 +262,14 @@ public class Assembly {
                         final IAtom atomToAdd = ssc2.getStructure()
                                                     .getAtom(atomIndexToAddSSC2)
                                                     .clone();
-                        final IBond bondToAdd = new Bond(extendedStructure.getAtom(parentAtomIndexSSC1), atomToAdd,
-                                                         bond.getOrder());
+                        IBond bondToAdd = new Bond(extendedStructure.getAtom(parentAtomIndexSSC1), atomToAdd,
+                                                   bond.getOrder());
                         bondToAdd.setIsInRing(bond.isInRing());
                         bondToAdd.setIsAromatic(bond.isAromatic());
                         extendedStructure.addAtom(atomToAdd);
                         extendedStructure.addBond(bondToAdd);
+                        final int indexOfAddedAtomSSC1 = extendedStructure.getAtomCount()
+                                - 1;
                         Signal signalToAddSSC2 = ssc2.getSpectrum()
                                                      .getSignal(ssc2.getAssignment()
                                                                     .getIndex(0, atomIndexToAddSSC2));
@@ -273,12 +278,10 @@ public class Assembly {
                                 != null) {
                             signalToAddSSC2 = signalToAddSSC2.buildClone();
                             AssemblyUtils.addSignalToSSC(extendedSpectrum, extendedAssignment, signalToAddSSC2,
-                                                         extendedStructure.getAtomCount()
-                                                                 - 1);
+                                                         indexOfAddedAtomSSC1);
                             System.out.println(Arrays.deepToString(extendedAssignment.getAssignments()));
                         }
-                        atomIndexMap.put(extendedStructure.getAtomCount()
-                                                 - 1, atomIndexToAddSSC2);
+                        atomIndexMap.put(indexOfAddedAtomSSC1, atomIndexToAddSSC2);
                         System.out.println("atomIndexMap new: "
                                                    + atomIndexMap);
 
@@ -332,6 +335,91 @@ public class Assembly {
                             }
                         }
 
+                        // for each neighbor of added atom build a connection tree with still unvisited nodes to add
+                        for (final IAtom connectedAtomSSC2 : ssc2.getStructure()
+                                                                 .getConnectedAtomsList(addedAtomInSSC2)) {
+                            if (!atomIndexMap.containsValue(connectedAtomSSC2.getIndex())) {
+                                // try to append the rest of connected but not visited atoms in SSC2
+                                final ConnectionTree connectionTreeToAddSSC2 = HOSECodeBuilder.buildConnectionTree(
+                                        ssc2.getStructure(), connectedAtomSSC2.getIndex(), null,
+                                        new HashSet<>(atomIndexMap.values()));
+                                System.out.println("tree to add for atom index "
+                                                           + connectedAtomSSC2.getIndex()
+                                                           + " in SSC2: "
+                                                           + connectionTreeToAddSSC2);
+
+                                // add atoms from tree to container
+                                HOSECodeBuilder.addToAtomContainer(connectionTreeToAddSSC2, extendedStructure,
+                                                                   indexOfAddedAtomSSC1, ssc2.getStructure()
+                                                                                             .getBond(addedAtomInSSC2,
+                                                                                                      connectedAtomSSC2)
+                                                                                             .clone());
+                                // add indices to index map
+                                int atomCounterSSC1 = extendedStructure.getAtomCount()
+                                        - connectionTreeToAddSSC2.getNodesCount(false);
+                                for (int s = 0; s
+                                        <= connectionTreeToAddSSC2.getMaxSphere(); s++) {
+                                    // first add all atoms and its parents (previous sphere only, incl. bonds) to structure
+                                    final List<ConnectionTreeNode> nodesInSphere = connectionTreeToAddSSC2.getNodesInSphere(
+                                            s, false);
+                                    for (int k = 0; k
+                                            < nodesInSphere.size(); k++) {
+                                        atomIndexMap.put(atomCounterSSC1, nodesInSphere.get(k)
+                                                                                       .getKey());
+                                        atomCounterSSC1++;
+                                    }
+                                }
+                            }
+                        }
+                        System.out.println("atomIndexMap final: "
+                                                   + atomIndexMap);
+                        // @TODO add possible missing bonds between added atoms from tree and already existing atoms in structure
+                        IAtom mappedAtomSSC2;
+                        for (final int mappedAtomIndexSSC2 : atomIndexMap.values()) {
+                            mappedAtomSSC2 = ssc2.getStructure()
+                                                 .getAtom(mappedAtomIndexSSC2);
+                            for (final IAtom mappedAtomNeighborSSC2 : ssc2.getStructure()
+                                                                          .getConnectedAtomsList(mappedAtomSSC2)) {
+                                if (atomIndexMap.containsValue(mappedAtomNeighborSSC2.getIndex())) {
+                                    final int key1 = utils.Utils.findKeyInMap(atomIndexMap, mappedAtomIndexSSC2);
+                                    final int key2 = utils.Utils.findKeyInMap(atomIndexMap,
+                                                                              mappedAtomNeighborSSC2.getIndex());
+                                    if (extendedStructure.getBond(extendedStructure.getAtom(key1),
+                                                                  extendedStructure.getAtom(key2))
+                                            == null) {
+                                        System.out.println("\nadd missing bond: "
+                                                                   + key1
+                                                                   + " <-> "
+                                                                   + key2);
+
+                                        bond = ssc2.getStructure()
+                                                   .getBond(mappedAtomSSC2, mappedAtomNeighborSSC2)
+                                                   .clone();
+
+
+                                        isValidBondAddition = casekit.nmr.Utils.isValidBondAddition(extendedStructure,
+                                                                                                    parentAtomIndexSSC1,
+                                                                                                    bond);
+                                        System.out.println("-> is valid bond addition extra ?: "
+                                                                   + isValidBondAddition);
+                                        if (isValidBondAddition) {
+                                            bondToAdd = new Bond(extendedStructure.getAtom(key1),
+                                                                 extendedStructure.getAtom(key2), bond.getOrder());
+                                            bondToAdd.setIsInRing(bond.isInRing());
+                                            bondToAdd.setIsAromatic(bond.isAromatic());
+
+                                            extendedStructure.addBond(bondToAdd);
+                                        } else {
+                                            allBondAdditionsAreValid = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (!allBondAdditionsAreValid) {
+                                break;
+                            }
+                        }
                     }
                     if (!allBondAdditionsAreValid) {
                         break;
