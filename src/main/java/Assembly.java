@@ -25,10 +25,12 @@ public class Assembly {
                                                                                          .withSize(512, 512)
                                                                                          .withFillToFit();
 
-    public static void buildFromSSCs(final Spectrum querySpectrum, final String mf, final int maxSphere, final SSC ssc1,
-                                     final SSC ssc2, final int indexSSC1, final int indexSSC2,
-                                     final int rootAtomIndexSSC1, final int rootAtomIndexSSC2, final double shiftTol,
-                                     final double matchFactorThrs) {
+    public static List<SSC> buildFromSSCs(final Spectrum querySpectrum, final String mf, final int maxSphere,
+                                          final SSC ssc1, final SSC ssc2, final int indexSSC1, final int indexSSC2,
+                                          final int rootAtomIndexSSC1, final int rootAtomIndexSSC2,
+                                          final double shiftTol, final double matchFactorThrs) {
+
+        final List<SSC> extendedSscList = new ArrayList<>();
 
         System.out.println("\n\n");
         System.out.println(ssc1.getUnsaturatedAtomIndices());
@@ -366,6 +368,18 @@ public class Assembly {
                                             < nodesInSphere.size(); k++) {
                                         atomIndexMap.put(atomCounterSSC1, nodesInSphere.get(k)
                                                                                        .getKey());
+                                        signalToAddSSC2 = ssc2.getSpectrum()
+                                                              .getSignal(ssc2.getAssignment()
+                                                                             .getIndex(0, nodesInSphere.get(k)
+                                                                                                       .getKey()));
+                                        System.out.println("signal to add extra: "
+                                                                   + signalToAddSSC2);
+                                        if (signalToAddSSC2
+                                                != null) {
+                                            AssemblyUtils.addSignalToSSC(extendedSpectrum, extendedAssignment,
+                                                                         signalToAddSSC2.buildClone(), atomCounterSSC1);
+                                        }
+
                                         atomCounterSSC1++;
                                     }
                                 }
@@ -443,6 +457,7 @@ public class Assembly {
                                                                                     ssc1.getStructure());
                     System.out.println(isValidExtension);
                     if (isValidExtension) {
+                        extendedSscList.add(extendedSSC);
                         try {
                             depictionGenerator.depict(extendedSSC.getStructure())
                                               .writeTo("/Users/mwenk/Downloads/depictions/extended_"
@@ -481,5 +496,7 @@ public class Assembly {
             }
 
         }
+
+        return extendedSscList;
     }
 }
