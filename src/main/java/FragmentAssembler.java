@@ -26,6 +26,7 @@ public class FragmentAssembler {
         System.out.println(mf);
 
         final int maxSphere = 3;
+        final int minMatchingSphereCount = 2;
         final double shiftTol = 2;
         final double matchFactorThrs = 2;
         List<SSC> sscList = new ArrayList<>(); //buildFromNMRShiftDB("/Users/mwenk/Downloads/test.sd", new String[]{"13C"}, maxSphere, 2);
@@ -69,7 +70,7 @@ public class FragmentAssembler {
             for (int j = 0; j
                     < sscList.size(); j++) {
 
-                //        final int i = 15;
+                //        final int i = 21;
                 //        final int j = 20;
                 System.out.println("\n\n--> ssc pair: "
                                            + i
@@ -79,7 +80,8 @@ public class FragmentAssembler {
                 final SSC ssc2 = sscList.get(j);
                 System.out.println(ssc1.getSpectrum());
                 System.out.println(ssc2.getSpectrum());
-                final Map<Integer, List<Integer[]>> overlaps = AssemblyUtils.getOverlaps(ssc1, ssc2, 2);
+                final Map<Integer, List<Integer[]>> overlaps = AssemblyUtils.getOverlaps(ssc1, ssc2,
+                                                                                         minMatchingSphereCount);
                 for (final Map.Entry<Integer, List<Integer[]>> integerListEntry : overlaps.entrySet()) {
                     System.out.println("---> sphere match: "
                                                + integerListEntry.getKey());
