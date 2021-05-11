@@ -46,4 +46,22 @@ public class Utils {
                                                  .findFirst();
         return keyOptional.orElse(null);
     }
+
+    public static int countHeteroAtoms(final IAtomContainer structure) {
+        int heteroAtomCount = 0;
+        for (int i = 0; i
+                < structure.getAtomCount(); i++) {
+            if (
+                //                    !structure.getAtom(i)
+                //                          .getSymbol()
+                //                          .equals("H")
+                //                    &&
+                    !structure.getAtom(i)
+                              .getSymbol()
+                              .equals("C")) {
+                heteroAtomCount++;
+            }
+        }
+        return heteroAtomCount;
+    }
 }
