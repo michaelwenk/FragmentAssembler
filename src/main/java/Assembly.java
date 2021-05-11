@@ -7,30 +7,22 @@ import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
 import model.SSC;
 import org.openscience.cdk.Bond;
-import org.openscience.cdk.depict.DepictionGenerator;
-import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IBond;
 import utils.AssemblyUtils;
 
-import java.io.IOException;
 import java.util.*;
 
 public class Assembly {
 
-    private static final DepictionGenerator depictionGenerator = new DepictionGenerator().withAtomColors()
-                                                                                         .withAtomNumbers()
-                                                                                         .withAromaticDisplay()
-                                                                                         .withSize(512, 512)
-                                                                                         .withFillToFit();
+    public static List<SSC> buildExtendedSSCList(final Spectrum querySpectrum, final String mf, final int maxSphere,
+                                                 final SSC ssc1, final SSC ssc2, final int indexSSC1,
+                                                 final int indexSSC2, final int rootAtomIndexSSC1,
+                                                 final int rootAtomIndexSSC2, final double shiftTol,
+                                                 final double matchFactorThrs) {
 
-    public static List<SSC> buildFromSSCs(final Spectrum querySpectrum, final String mf, final int maxSphere,
-                                          final SSC ssc1, final SSC ssc2, final int indexSSC1, final int indexSSC2,
-                                          final int rootAtomIndexSSC1, final int rootAtomIndexSSC2,
-                                          final double shiftTol, final double matchFactorThrs) {
-
-        final List<SSC> extendedSscList = new ArrayList<>();
+        final List<SSC> extendedSSCList = new ArrayList<>();
 
         System.out.println("\n\n");
         System.out.println(ssc1.getUnsaturatedAtomIndices());
@@ -457,38 +449,7 @@ public class Assembly {
                                                                                     ssc1.getStructure());
                     System.out.println(isValidExtension);
                     if (isValidExtension) {
-                        extendedSscList.add(extendedSSC);
-                        try {
-                            depictionGenerator.depict(extendedSSC.getStructure())
-                                              .writeTo("/Users/mwenk/Downloads/depictions/extended_"
-                                                               + indexSSC1
-                                                               + "-"
-                                                               + indexSSC2
-                                                               + "_"
-                                                               + rootAtomIndexSSC1
-                                                               + "-"
-                                                               + rootAtomIndexSSC2
-                                                               + ".png");
-                        } catch (final IOException | CDKException e) {
-                            e.printStackTrace();
-                        }
-                        if (AssemblyUtils.isFinalSSC(extendedSSC, querySpectrum, shiftTol, matchFactorThrs, mf)) {
-                            try {
-                                depictionGenerator.depict(extendedSSC.getStructure())
-                                                  .writeTo("/Users/mwenk/Downloads/depictions/final_"
-                                                                   + indexSSC1
-                                                                   + "-"
-                                                                   + indexSSC2
-                                                                   + "_"
-                                                                   + rootAtomIndexSSC1
-                                                                   + "-"
-                                                                   + rootAtomIndexSSC2
-                                                                   + ".png");
-
-                            } catch (final IOException | CDKException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        extendedSSCList.add(extendedSSC);
                     }
                 }
             } catch (final CloneNotSupportedException e) {
@@ -497,6 +458,6 @@ public class Assembly {
 
         }
 
-        return extendedSscList;
+        return extendedSSCList;
     }
 }
