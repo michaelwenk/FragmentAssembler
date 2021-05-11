@@ -17,7 +17,6 @@ public class SSC {
     private IAtomContainer structure;
     private Spectrum spectrum;
     private Assignment assignment;
-    private int rootAtomIndex;
     private List<String> hoseCodes;
     private List<Integer> unsaturatedAtomIndices;
 
@@ -25,7 +24,7 @@ public class SSC {
         try {
             return new SSC(this.structure.clone(), this.getSpectrum()
                                                        .buildClone(), this.getAssignment()
-                                                                          .buildClone(), this.getRootAtomIndex(),
+                                                                          .buildClone(),
                            new ArrayList<>(this.getHoseCodes()), new ArrayList<>(this.getUnsaturatedAtomIndices()));
         } catch (final CloneNotSupportedException e) {
             e.printStackTrace();

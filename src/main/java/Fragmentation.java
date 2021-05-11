@@ -162,7 +162,7 @@ public class Fragmentation {
         subspectrum.setSolvent(spectrum.getSolvent());
         subspectrum.setSpectrometerFrequency(spectrum.getSpectrometerFrequency());
 
-        return new SSC(substructure, subspectrum, subassignment, 0, utils.Utils.buildHOSECodes(substructure, maxSphere),
+        return new SSC(substructure, subspectrum, subassignment, utils.Utils.buildHOSECodes(substructure, maxSphere),
                        utils.Utils.getUnsaturatedAtomIndices(substructure));
     }
 

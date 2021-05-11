@@ -57,7 +57,6 @@ public class Converter {
         document.append("spectrum", Document.parse(GSON.toJson(GSON.toJsonTree(ssc.getSpectrum(), Spectrum.class))));
         document.append("assignment",
                         Document.parse(GSON.toJson(GSON.toJsonTree(ssc.getAssignment(), Assignment.class))));
-        document.append("rootAtomIndex", ssc.getRootAtomIndex());
         document.append("hoseCodes", ssc.getHoseCodes());
         document.append("unsaturatedAtomIndices", ssc.getUnsaturatedAtomIndices());
 
@@ -70,8 +69,7 @@ public class Converter {
                                                       .getAsJsonObject();
         return new SSC(GSON.fromJson(jsonObject.get("structure"), ExtendedConnectionMatrix.class)
                            .toAtomContainer(), GSON.fromJson(jsonObject.get("spectrum"), Spectrum.class),
-                       GSON.fromJson(jsonObject.get("assignment"), Assignment.class), jsonObject.get("rootAtomIndex")
-                                                                                                .getAsInt(),
+                       GSON.fromJson(jsonObject.get("assignment"), Assignment.class),
                        GSON.fromJson(jsonObject.get("hoseCodes"), new TypeToken<List<String>>() {
                        }.getType()),
                        GSON.fromJson(jsonObject.get("unsaturatedAtomIndices"), new TypeToken<List<Integer>>() {
