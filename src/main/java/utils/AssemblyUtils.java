@@ -229,17 +229,23 @@ public class AssemblyUtils {
             return;
         }
 
+        final Signal newSignal = signalToAdd.buildClone();
         // just to be sure that we take the right signal if equivalences are present
-        final List<Integer> closestSignalList = spectrum.pickByClosestShift(signalToAdd.getShift(0), 0, 0.0);
-        closestSignalList.retainAll(spectrum.pickByMultiplicity(signalToAdd.getMultiplicity()));
+        final List<Integer> closestSignalList = spectrum.pickByClosestShift(newSignal.getShift(0), 0, 0.0);
+        closestSignalList.retainAll(spectrum.pickByMultiplicity(newSignal.getMultiplicity()));
         if (closestSignalList.isEmpty()) {
-            spectrum.addSignal(signalToAdd);
+            newSignal.setEquivalencesCount(1);
+            spectrum.addSignal(newSignal);
             assignment.addAssignment(0, new int[]{atomIndex});
         } else {
             final int signalIndex = closestSignalList.get(0);
             if (Arrays.stream(assignment.getAssignment(0, signalIndex))
                       .noneMatch(equiv -> equiv
                               == atomIndex)) {
+                spectrum.getSignal(signalIndex)
+                        .setEquivalencesCount(spectrum.getSignal(signalIndex)
+                                                      .getEquivalencesCount()
+                                                      + 1); // + 1 because we add one atom only
                 assignment.addAssignmentEquivalence(0, signalIndex, atomIndex);
             }
         }
