@@ -92,14 +92,9 @@ public class Utils {
         int heteroAtomCount = 0;
         for (int i = 0; i
                 < structure.getAtomCount(); i++) {
-            if (
-                //                    !structure.getAtom(i)
-                //                          .getSymbol()
-                //                          .equals("H")
-                //                    &&
-                    !structure.getAtom(i)
-                              .getSymbol()
-                              .equals("C")) {
+            if (!structure.getAtom(i)
+                          .getSymbol()
+                          .equals("C")) {
                 heteroAtomCount++;
             }
         }

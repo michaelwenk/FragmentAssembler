@@ -1,3 +1,4 @@
+import casekit.nmr.dbservice.NMRShiftDB;
 import casekit.nmr.hose.HOSECodeBuilder;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.DataSet;
@@ -10,6 +11,7 @@ import org.openscience.cdk.interfaces.IAtomContainer;
 import utils.AssemblyUtils;
 import utils.ParallelTasks;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -203,5 +205,34 @@ public class Fragmentation {
                                                                  final int rootAtomIndex, final int maxSphere) {
         return HOSECodeBuilder.buildConnectionTree(structure, rootAtomIndex, maxSphere)
                               .getKeys();
+    }
+
+    public static List<SSC> buildFromNMRShiftDB(final String pathToNMRShiftDB, final String[] nuclei,
+                                                final int maxSphere, final int nThreads) {
+        final List<SSC> sscList = new ArrayList<>();
+        List<SSC> sscListTemp = new ArrayList<>();
+        for (int m = 2; m
+                <= maxSphere; m++) {
+            System.out.println("Building SSC for "
+                                       + m
+                                       + "-spheres...");
+
+            try {
+                sscListTemp = Fragmentation.buildSSCCollection(
+                        NMRShiftDB.getDataSetsFromNMRShiftDB(pathToNMRShiftDB, nuclei), m, nThreads);
+            } catch (final InterruptedException | FileNotFoundException | CDKException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("SSC for "
+                                       + m
+                                       + "-spheres built!!!");
+            System.out.println("-> #SSC in SSC library: "
+                                       + sscListTemp.size());
+            sscList.addAll(sscListTemp);
+        }
+        System.out.println("Building SSC done!!!");
+
+        return sscList;
     }
 }
