@@ -1,4 +1,3 @@
-import casekit.nmr.dbservice.NMRShiftDB;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.Spectrum;
 import casekit.nmr.utils.Match;
@@ -37,7 +36,8 @@ public class FragmentAssembler {
         final int minMatchingSphereCount = 1;
         final double shiftTol = 2;
         final double matchFactorThrs = 2;
-        //        List<SSC> sscList = buildFromNMRShiftDB("/Users/mwenk/Downloads/test.sd", new String[]{"13C"}, maxSphere, 2);
+        //        List<SSC> sscList = Fragmentation.buildFromNMRShiftDB("/Users/mwenk/Downloads/test.sd", new String[]{"13C"},
+        //                                                              maxSphere, 2);
         List<SSC> sscList = new ArrayList<>();
 
         final String pathToJsonFile = "/Users/mwenk/Downloads/sscList.json";
@@ -88,46 +88,59 @@ public class FragmentAssembler {
 
         final SmilesGenerator smilesGenerator = new SmilesGenerator(SmiFlavor.Absolute);
         final Map<String, SSC> solutions = new HashMap<>();
+        final Stack<Object[]> intermediates = new Stack<>();
 
-        final int i = 0;
-        SSC ssc1 = sscList.get(i);
-        for (int j = 0; j
-                < sscList.size(); j++) {
-            if (i
-                    == j) {
+        final int startSSCIndex = 0;
+        intermediates.push(new Object[]{sscList.get(startSSCIndex).buildClone(), startSSCIndex});
+
+        Object[] stackItem;
+        SSC intermediate;
+        int currentSSCIndex;
+        SSC currentSSC;
+        List<SSC> extendedSSCList;
+        String smiles;
+        Map<Integer, List<Integer[]>> overlaps;
+
+        while (!intermediates.empty()) {
+            stackItem = intermediates.pop();
+            intermediate = (SSC) stackItem[0];
+            currentSSCIndex = ((int) stackItem[1])
+                    + 1;
+            if (currentSSCIndex
+                    >= sscList.size()) {
                 continue;
             }
+
+            //            if (currentSSCIndex
+            //                    == startSSCIndex) {
+            //                continue;
+            //            }
             System.out.println("\n\n--> ssc pair: "
-                                       + i
+                                       + startSSCIndex
                                        + " vs. "
-                                       + j);
-            final SSC ssc2 = sscList.get(j);
-            final Map<Integer, List<Integer[]>> overlaps = AssemblyUtils.getOverlaps(ssc1, ssc2,
-                                                                                     minMatchingSphereCount);
-            final List<SSC> extendedSSCList = new ArrayList<>();
-            String smiles;
+                                       + currentSSCIndex);
+            currentSSC = sscList.get(currentSSCIndex);
+            overlaps = AssemblyUtils.getOverlaps(intermediate, currentSSC, minMatchingSphereCount);
+            extendedSSCList = new ArrayList<>();
             for (final Map.Entry<Integer, List<Integer[]>> integerListEntry : overlaps.entrySet()) {
                 System.out.println("---> sphere match: "
                                            + integerListEntry.getKey());
                 for (final Integer[] rootAtomIndices : integerListEntry.getValue()) {
                     System.out.println("\n--> root atom pair: "
                                                + Arrays.toString(rootAtomIndices));
-                    for (final SSC extendedSSC : Assembly.assemblyCore(querySpectrum, mf, maxSphere, ssc1, ssc2,
+                    for (final SSC extendedSSC : Assembly.assemblyCore(querySpectrum, mf, maxSphere,
+                                                                       intermediate.buildClone(), currentSSC,
                                                                        rootAtomIndices[0], rootAtomIndices[1], shiftTol,
                                                                        matchFactorThrs)) {
-                        // do not add duplicates
+                        extendedSSCList.add(extendedSSC);
                         try {
                             smiles = smilesGenerator.create(extendedSSC.getStructure());
-                            System.out.println("SMILES: "
-                                                       + smiles);
-                            System.out.println(" --> added");
-                            extendedSSCList.add(extendedSSC);
                             try {
                                 depictionGenerator.depict(extendedSSC.getStructure())
                                                   .writeTo("/Users/mwenk/Downloads/depictions/extended_"
-                                                                   + i
+                                                                   + startSSCIndex
                                                                    + "-"
-                                                                   + j
+                                                                   + currentSSCIndex
                                                                    + "_"
                                                                    + rootAtomIndices[0]
                                                                    + "-"
@@ -141,9 +154,9 @@ public class FragmentAssembler {
                                 try {
                                     depictionGenerator.depict(extendedSSC.getStructure())
                                                       .writeTo("/Users/mwenk/Downloads/depictions/final_"
-                                                                       + i
+                                                                       + startSSCIndex
                                                                        + "-"
-                                                                       + j
+                                                                       + currentSSCIndex
                                                                        + "_"
                                                                        + rootAtomIndices[0]
                                                                        + "-"
@@ -160,41 +173,17 @@ public class FragmentAssembler {
                 }
             }
             if (!extendedSSCList.isEmpty()) {
-                System.out.println("SIZE: "
-                                           + extendedSSCList.size());
                 Utils.sortSSCList(extendedSSCList, querySpectrum, shiftTol);
-                ssc1 = extendedSSCList.get(0)
-                                      .buildClone();
+                Collections.reverse(extendedSSCList);
+                for (final SSC newIntermediate : extendedSSCList) {
+                    intermediates.push(new Object[]{newIntermediate.buildClone(), currentSSCIndex});
+                }
+            } else {
+                intermediates.push(new Object[]{intermediate, currentSSCIndex});
             }
         }
-    }
 
-    public static List<SSC> buildFromNMRShiftDB(final String pathToNMRShiftDB, final String[] nuclei,
-                                                final int maxSphere, final int nThreads) {
-        final List<SSC> sscList = new ArrayList<>();
-        List<SSC> sscListTemp = new ArrayList<>();
-        for (int m = 2; m
-                <= maxSphere; m++) {
-            System.out.println("Building SSC for "
-                                       + m
-                                       + "-spheres...");
-
-            try {
-                sscListTemp = Fragmentation.buildSSCCollection(
-                        NMRShiftDB.getDataSetsFromNMRShiftDB(pathToNMRShiftDB, nuclei), m, nThreads);
-            } catch (final InterruptedException | FileNotFoundException | CDKException e) {
-                e.printStackTrace();
-            }
-
-            System.out.println("SSC for "
-                                       + m
-                                       + "-spheres built!!!");
-            System.out.println("-> #SSC in SSC library: "
-                                       + sscListTemp.size());
-            sscList.addAll(sscListTemp);
-        }
-        System.out.println("Building SSC done!!!");
-
-        return sscList;
+        System.out.println("\n\nsolutions:\n"
+                                   + solutions.keySet());
     }
 }

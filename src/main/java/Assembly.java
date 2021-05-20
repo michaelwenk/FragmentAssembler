@@ -377,7 +377,7 @@ public class Assembly {
                         }
                         System.out.println("atomIndexMap final: "
                                                    + atomIndexMap);
-                        // @TODO add possible missing bonds between added atoms from tree and already existing atoms in structure
+                        // add possible missing bonds between added atoms from tree and already existing atoms in structure
                         IAtom mappedAtomSSC2;
                         for (final int mappedAtomIndexSSC2 : atomIndexMap.values()) {
                             mappedAtomSSC2 = ssc2.getStructure()
