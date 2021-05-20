@@ -87,14 +87,10 @@ public class Converter {
     }
 
     private static List<SSC> jsonToSscList(final BufferedReader br, final int nThreads) throws InterruptedException {
-        System.out.println("started converting...");
+        System.out.println("started converting... jsonToSscList");
 
         final ConcurrentLinkedQueue<SSC> convertedSSCs = new ConcurrentLinkedQueue<>();
         final JsonParser jsonParser = new JsonParser();
-        //        final JsonReader jsonReader = GSON.newJsonReader(br);
-        //        jsonReader.setLenient(true);
-        //        System.out.println(jsonParser.parse(jsonReader)
-        //                                     .getAsJsonObject());
         final List<Callable<SSC>> callables = new ArrayList<>();
         // add all task to do
         br.lines()
@@ -122,6 +118,7 @@ public class Converter {
           });
         Converter.convertDocumentsToSSCs(callables, convertedSSCs, nThreads);
         System.out.println("all converted");
+
         return new ArrayList<>(convertedSSCs);
     }
 
@@ -158,68 +155,64 @@ public class Converter {
         ParallelTasks.processTasks(callables, collection::add, nThreads);
     }
 
-    /**
-     * Stores this SSC library into a string in JSON format.
-     *
-     * @return this SSC library as JSON string
-     */
-    public static String sscListToJson(final List<SSC> sscList) {
-        final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("{");
-        stringBuilder.append("\n");
-        String json;
-        long sscCounter = 0;
-        for (final SSC ssc : sscList) {
-            json = Converter.sscToJson(ssc, sscCounter);
-            stringBuilder.append(json, 1, json.length()
-                    - 1);
-            if (sscCounter
-                    < sscList.size()
-                    - 1) {
-                stringBuilder.append(",");
-            }
-            stringBuilder.append("\n");
-
-            sscCounter++;
-        }
-        stringBuilder.append("}");
-
-        return stringBuilder.toString();
-    }
-
     public static boolean sscListToJSONFile(final List<SSC> sscList, final String pathToJsonFile) {
         try {
             final BufferedWriter bw = new BufferedWriter(new FileWriter(pathToJsonFile));
-            bw.write(Converter.sscListToJson(sscList));
+            bw.append("{");
+            bw.newLine();
+            bw.flush();
+
+            String json;
+            long sscCounter = 0;
+            for (final SSC ssc : sscList) {
+                json = Converter.sscToJson(ssc, sscCounter);
+                bw.append(json, 1, json.length()
+                        - 1);
+                if (sscCounter
+                        < sscList.size()
+                        - 1) {
+                    bw.append(",");
+                }
+                bw.newLine();
+                bw.flush();
+
+                sscCounter++;
+            }
+
+            bw.append("}");
+            bw.flush();
             bw.close();
 
             return true;
         } catch (final IOException e) {
             e.printStackTrace();
-            return false;
         }
+
+        return false;
     }
 
     public static List<Query> parseQueriesFile(final String pathToQueriesFile) {
         final List<Query> queries = new ArrayList<>();
         try {
             final BufferedReader br = new BufferedReader(new FileReader(pathToQueriesFile));
-            String molecularFormula = "";
+            String molecularFormula = null;
+            String solvent;
             Spectrum querySpectrum = new Spectrum();
             final Iterator<String> it = br.lines()
                                           .iterator();
             String line;
             String[] signalProperties;
+            int metaInfoIndex;
             // process every query spectrum in queries file
             while (it.hasNext()) {
                 line = it.next();
                 if (line.trim()
                         .startsWith("//")) {
-                    // create new query spectrum with description
+                    // create new query spectrum with description and solvent
                     querySpectrum = new Spectrum();
                     querySpectrum.setSignals(new ArrayList<>());
                     querySpectrum.setDescription(line.split("//")[1].trim());
-                    molecularFormula = "";
+                    metaInfoIndex = 1;
                     while (it.hasNext()) {
                         line = it.next();
                         if (line.trim()
@@ -228,13 +221,27 @@ public class Converter {
                         }
                         if (line.trim()
                                 .startsWith("//")) {
-                            try {
-                                molecularFormula = line.split("//")[1].trim();
-                                System.out.println(" read molecular formula: "
-                                                           + molecularFormula);
-                            } catch (final Exception e) {
-                                molecularFormula = null;
+                            if (metaInfoIndex
+                                    == 1) {
+                                try {
+                                    solvent = line.split("//")[1].trim();
+                                    System.out.println(" read solvent: "
+                                                               + solvent);
+                                } catch (final Exception e) {
+                                    solvent = null;
+                                }
+                                querySpectrum.setSolvent(solvent);
+                            } else if (metaInfoIndex
+                                    == 2) {
+                                try {
+                                    molecularFormula = line.split("//")[1].trim();
+                                    System.out.println(" read molecular formula: "
+                                                               + molecularFormula);
+                                } catch (final Exception e) {
+                                    molecularFormula = null;
+                                }
                             }
+                            metaInfoIndex++;
                         } else {
                             signalProperties = line.trim()
                                                    .split(",");
