@@ -16,11 +16,10 @@ import java.util.*;
 
 public class Assembly {
 
-    public static List<SSC> buildExtendedSSCList(final Spectrum querySpectrum, final String mf, final int maxSphere,
-                                                 final SSC ssc1, final SSC ssc2, final int indexSSC1,
-                                                 final int indexSSC2, final int rootAtomIndexSSC1,
-                                                 final int rootAtomIndexSSC2, final double shiftTol,
-                                                 final double matchFactorThrs) {
+    public static List<SSC> assemblyCore(final Spectrum querySpectrum, final String mf, final int maxSphere,
+                                         final SSC ssc1, final SSC ssc2, final int rootAtomIndexSSC1,
+                                         final int rootAtomIndexSSC2, final double shiftTol,
+                                         final double matchFactorThrs) {
 
         final List<SSC> extendedSSCList = new ArrayList<>();
 
@@ -270,7 +269,6 @@ public class Assembly {
                         System.out.println(signalToAddSSC2);
                         if (signalToAddSSC2
                                 != null) {
-                            signalToAddSSC2 = signalToAddSSC2.buildClone();
                             AssemblyUtils.addSignalToSSC(extendedSpectrum, extendedAssignment, signalToAddSSC2,
                                                          indexOfAddedAtomSSC1);
                             System.out.println(Arrays.deepToString(extendedAssignment.getAssignments()));
@@ -447,7 +445,8 @@ public class Assembly {
                     final boolean isValidExtension = AssemblyUtils.isValidExtension(extendedSSC, querySpectrum,
                                                                                     shiftTol, matchFactorThrs, mf,
                                                                                     ssc1.getStructure());
-                    System.out.println(isValidExtension);
+                    System.out.println("isValidExtension ? -> "
+                                               + isValidExtension);
                     if (isValidExtension) {
                         extendedSSCList.add(extendedSSC);
                     }

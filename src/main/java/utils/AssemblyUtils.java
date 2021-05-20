@@ -41,24 +41,28 @@ public class AssemblyUtils {
 
     public static boolean isValidSubspectrum(final SSC ssc, final Spectrum querySpectrum, final double shiftTol,
                                              final double matchFactorThrs) {
-        if ((ssc.getSpectrum()
+        return isValidSubspectrum(ssc.getSpectrum(), querySpectrum, shiftTol, matchFactorThrs);
+    }
+
+    public static boolean isValidSubspectrum(final Spectrum spectrum, final Spectrum querySpectrum,
+                                             final double shiftTol, final double matchFactorThrs) {
+        if ((spectrum
                 == null)
-                || (ssc.getSpectrum()
-                       .getSignalCount()
+                || (spectrum.getSignalCount()
                 > querySpectrum.getSignalCount())) {
             System.out.println("-> subspectrum == null or signal count subspectrum > signal count query spectrum!!!");
             return false;
         }
-        final Assignment matchAssignments = Match.matchSpectra(ssc.getSpectrum(), querySpectrum, 0, 0, shiftTol, true,
-                                                               true, true);
+        final Assignment matchAssignments = Match.matchSpectra(spectrum, querySpectrum, 0, 0, shiftTol, true, true,
+                                                               true);
         // filter for unset assignments
         if (matchAssignments.getSetAssignmentsCount(0)
                 == 0) {
             return false;
         }
         // @TODO add/enable filter for intensities
-        final Double avgDev = Match.calculateAverageDeviation(ssc.getSpectrum(), querySpectrum, 0, 0, shiftTol, true,
-                                                              true, true);
+        final Double avgDev = Match.calculateAverageDeviation(spectrum, querySpectrum, 0, 0, shiftTol, true, true,
+                                                              true);
         if (avgDev
                 == null
                 || avgDev

@@ -1,7 +1,6 @@
 import casekit.nmr.hose.HOSECodeBuilder;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.DataSet;
-import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
 import casekit.nmr.utils.Utils;
 import model.SSC;
@@ -142,7 +141,6 @@ public class Fragmentation {
         subassignment.setNuclei(spectrum.getNuclei());
         subassignment.initAssignments(subspectrum.getSignalCount());
         IAtom atomInStructure;
-        Signal signalToAdd;
         for (int j = 0; j
                 < substructure.getAtomCount(); j++) {
             atomInStructure = structure.getAtom(substructureAtomIndices.get(j));
@@ -154,9 +152,9 @@ public class Fragmentation {
                         == null)) {
                     return null;
                 }
-                signalToAdd = spectrum.getSignal(assignment.getIndex(0, substructureAtomIndices.get(j)))
-                                      .buildClone();
-                AssemblyUtils.addSignalToSSC(subspectrum, subassignment, signalToAdd, j);
+                AssemblyUtils.addSignalToSSC(subspectrum, subassignment,
+                                             spectrum.getSignal(assignment.getIndex(0, substructureAtomIndices.get(j))),
+                                             j);
             }
         }
         subspectrum.setSolvent(spectrum.getSolvent());
