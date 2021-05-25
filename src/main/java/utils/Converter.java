@@ -157,6 +157,7 @@ public class Converter {
 
     public static boolean sscListToJSONFile(final List<SSC> sscList, final String pathToJsonFile) {
         try {
+            System.out.println("started converting... sscListToJSONFile");
             final BufferedWriter bw = new BufferedWriter(new FileWriter(pathToJsonFile));
             bw.append("{");
             bw.newLine();
@@ -182,6 +183,8 @@ public class Converter {
             bw.append("}");
             bw.flush();
             bw.close();
+
+            System.out.println("all converted");
 
             return true;
         } catch (final IOException e) {
@@ -225,8 +228,6 @@ public class Converter {
                                     == 1) {
                                 try {
                                     solvent = line.split("//")[1].trim();
-                                    System.out.println(" read solvent: "
-                                                               + solvent);
                                 } catch (final Exception e) {
                                     solvent = null;
                                 }
@@ -235,8 +236,6 @@ public class Converter {
                                     == 2) {
                                 try {
                                     molecularFormula = line.split("//")[1].trim();
-                                    System.out.println(" read molecular formula: "
-                                                               + molecularFormula);
                                 } catch (final Exception e) {
                                     molecularFormula = null;
                                 }
