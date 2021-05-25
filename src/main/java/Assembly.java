@@ -16,46 +16,46 @@ import java.util.*;
 
 public class Assembly {
 
+    public static List<SSC> assemblyOverlaps(final SSC ssc1, final SSC ssc2, final Spectrum querySpectrum,
+                                             final String mf, final int maxSphere, final double shiftTol,
+                                             final double matchFactorThrs, final int minMatchingSphereCount) {
+        final Map<Integer, List<Integer[]>> overlaps = AssemblyUtils.getOverlaps(ssc1, ssc2, minMatchingSphereCount);
+        final List<SSC> extendedSSCList = new ArrayList<>();
+        for (final Map.Entry<Integer, List<Integer[]>> integerListEntry : overlaps.entrySet()) {
+            System.out.println("---> sphere match: "
+                                       + integerListEntry.getKey());
+            for (final Integer[] rootAtomIndices : integerListEntry.getValue()) {
+                System.out.println("\n--> root atom pair: "
+                                           + Arrays.toString(rootAtomIndices));
+                extendedSSCList.addAll(
+                        Assembly.assemblyCore(querySpectrum, mf, maxSphere, ssc1, ssc2, rootAtomIndices[0],
+                                              rootAtomIndices[1], shiftTol, matchFactorThrs));
+            }
+        }
+
+        return extendedSSCList;
+    }
+
     public static List<SSC> assemblyCore(final Spectrum querySpectrum, final String mf, final int maxSphere,
                                          final SSC ssc1, final SSC ssc2, final int rootAtomIndexSSC1,
                                          final int rootAtomIndexSSC2, final double shiftTol,
                                          final double matchFactorThrs) {
-
-        final List<SSC> extendedSSCList = new ArrayList<>();
-
-        System.out.println("\n\n");
-        System.out.println(ssc1.getUnsaturatedAtomIndices());
         System.out.println(ssc1.getHoseCodes()
                                .get(rootAtomIndexSSC1));
-        final List<Integer> substructureAtomIndicesListHOSECodeSSC1 = Fragmentation.buildSubstructureAtomIndicesList(
-                ssc1.getStructure(), rootAtomIndexSSC1, maxSphere);
-        System.out.println(substructureAtomIndicesListHOSECodeSSC1);
-        final List<String> hoseCodeSpheresSSC1 = Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
-                                                                                    .get(rootAtomIndexSSC1));
-        System.out.println(hoseCodeSpheresSSC1);
-        for (final String hoseCodeSphere : hoseCodeSpheresSSC1) {
-            final Map<Integer, ArrayList<String>> splitPositions = Utils.splitHOSECodeSphereIntoPositions(
-                    hoseCodeSphere, false);
-            System.out.println(splitPositions);
-        }
-
-        System.out.println("\n");
+        System.out.println("vs.");
         System.out.println(ssc2.getHoseCodes()
                                .get(rootAtomIndexSSC2));
+        final List<SSC> extendedSSCList = new ArrayList<>();
+        final List<Integer> substructureAtomIndicesListHOSECodeSSC1 = Fragmentation.buildSubstructureAtomIndicesList(
+                ssc1.getStructure(), rootAtomIndexSSC1, maxSphere);
+        final List<String> hoseCodeSpheresSSC1 = Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
+                                                                                    .get(rootAtomIndexSSC1));
         final List<Integer> substructureAtomIndicesListHOSECodeSSC2 = Fragmentation.buildSubstructureAtomIndicesList(
                 ssc2.getStructure(), rootAtomIndexSSC2, maxSphere);
-        System.out.println(substructureAtomIndicesListHOSECodeSSC2);
         final List<String> hoseCodeSpheresSSC2 = Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
                                                                                     .get(rootAtomIndexSSC2));
-        System.out.println(hoseCodeSpheresSSC2);
-        for (final String hoseCodeSphere : hoseCodeSpheresSSC2) {
-            final Map<Integer, ArrayList<String>> splitPositions = Utils.splitHOSECodeSphereIntoPositions(
-                    hoseCodeSphere, false);
-            System.out.println(splitPositions);
-        }
-
         int matchingSphereCount = 0;
-        int atomCount = 0;
+        int matchingAtomCount = 0;
         for (int i = 0; i
                 < Math.min(hoseCodeSpheresSSC1.size(), hoseCodeSpheresSSC2.size()); i++) {
             if (!hoseCodeSpheresSSC1.get(i)
@@ -66,19 +66,20 @@ public class Assembly {
         }
         for (int s = 0; s
                 < matchingSphereCount; s++) {
-            atomCount += Utils.countAtoms(hoseCodeSpheresSSC1.get(s));
+            matchingAtomCount += Utils.countAtoms(hoseCodeSpheresSSC1.get(s));
+        }
+
+        final Map<Integer, Integer> atomIndexMap = new HashMap<>();
+        for (int i = 0; i
+                < matchingAtomCount; i++) {
+            atomIndexMap.put(substructureAtomIndicesListHOSECodeSSC1.get(i),
+                             substructureAtomIndicesListHOSECodeSSC2.get(i));
         }
         System.out.println("\n -> overlapping sphere count: "
                                    + matchingSphereCount
                                    + " with "
-                                   + atomCount
+                                   + matchingAtomCount
                                    + " atoms");
-        final Map<Integer, Integer> atomIndexMap = new HashMap<>();
-        for (int i = 0; i
-                < atomCount; i++) {
-            atomIndexMap.put(substructureAtomIndicesListHOSECodeSSC1.get(i),
-                             substructureAtomIndicesListHOSECodeSSC2.get(i));
-        }
         System.out.println(" -> mapping: "
                                    + atomIndexMap);
         final boolean containsUnsaturatedAtomsSSC1 = atomIndexMap.keySet()
@@ -99,18 +100,12 @@ public class Assembly {
                 < hoseCodeSpheresSSC1.size()
                 && matchingSphereCount
                 < hoseCodeSpheresSSC2.size()) {
-            System.out.println(hoseCodeSpheresSSC1.get((matchingSphereCount
-                    - 1)
-                                                               + 1));
-            System.out.println(hoseCodeSpheresSSC2.get((matchingSphereCount
-                    - 1)
-                                                               + 1));
             final Map<Integer, ArrayList<String>> splitPositionsSSC1 = Utils.splitHOSECodeSphereIntoPositions(
                     hoseCodeSpheresSSC1.get(matchingSphereCount), false);
             final Map<Integer, ArrayList<String>> splitPositionsSSC2 = Utils.splitHOSECodeSphereIntoPositions(
                     hoseCodeSpheresSSC2.get(matchingSphereCount), false);
-            int atomIndexSSC1 = atomCount;
-            int atomIndexSSC2 = atomCount;
+            int atomIndexSSC1 = matchingAtomCount;
+            int atomIndexSSC2 = matchingAtomCount;
             int totalElemCount, elemCountPrevSphere, parentAtomIndexSSC2;
             boolean isEmptySSC1, stop;
             Map<Integer, ArrayList<String>> splitPositionsPrevSpheresSSC2;
@@ -161,16 +156,19 @@ public class Assembly {
                 for (int elemIndexSSC2 = 0; elemIndexSSC2
                         < positionElementsSSC2.size(); elemIndexSSC2++) {
                     isEmptySSC1 = false;
-                    if (elemIndexSSC2
+                    if (!splitPositionsSSC1.containsKey(posIndexSSC2)
+                            || elemIndexSSC2
                             >= splitPositionsSSC1.get(posIndexSSC2)
                                                  .size()
                             || splitPositionsSSC1.get(posIndexSSC2)
                                                  .get(elemIndexSSC2)
                             == null
+                            || elemIndexSSC2
+                            >= splitPositionsSSC1.get(posIndexSSC2)
+                                                 .size()
                             || Utils.countAtoms(splitPositionsSSC1.get(posIndexSSC2)
                                                                   .get(elemIndexSSC2))
                             == 0) {
-
                         isEmptySSC1 = true;
                     }
                     if (!isEmptySSC1) {
@@ -187,10 +185,6 @@ public class Assembly {
                             != null
                             && Utils.countAtoms(positionElementsSSC2.get(elemIndexSSC2))
                             > 0) {
-                        System.out.println(" ---------------------------> "
-                                                   + positionElementsSSC2.get(elemIndexSSC2));
-                        System.out.println("parent index in prev sphere: "
-                                                   + parentAtomIndexSSC2);
                         if (parentAtomIndexSSC2
                                 >= 0
                                 && atomIndexSSC2
@@ -205,8 +199,6 @@ public class Assembly {
             }
             System.out.println(" -> mapping: "
                                        + atomIndexMap);
-            System.out.println(" -> atom indices to add SSC2: "
-                                       + atomIndicesToAddSSC2);
             boolean allBondAdditionsAreValid = true;
             try {
                 final IAtomContainer extendedStructure = ssc1.getStructure()
@@ -222,32 +214,15 @@ public class Assembly {
                         final int parentAtomIndexSSC1 = utils.Utils.findKeyInMap(atomIndexMap, parentAtomIndexSSC2Temp);
                         final int atomIndexToAddSSC2 = atomIndicesToAddSSC2.get(parentAtomIndexSSC2Temp)
                                                                            .get(i);
-
-                        System.out.println("--> "
-                                                   + parentAtomIndexSSC2Temp);
-                        System.out.println(parentAtomIndexSSC1);
-                        System.out.println(atomIndexToAddSSC2);
-
                         IBond bond = ssc2.getStructure()
                                          .getBond(ssc2.getStructure()
                                                       .getAtom(parentAtomIndexSSC2Temp), ssc2.getStructure()
                                                                                              .getAtom(
                                                                                                      atomIndexToAddSSC2));
-
                         boolean isValidBondAddition = bond
                                 != null
                                 && casekit.nmr.Utils.isValidBondAddition(ssc1.getStructure(), parentAtomIndexSSC1,
                                                                          bond);
-                        System.out.println("\n");
-                        System.out.println(" -> "
-                                                   + parentAtomIndexSSC1
-                                                   + " ("
-                                                   + parentAtomIndexSSC2Temp
-                                                   + ") "
-                                                   + casekit.nmr.Utils.getBondOrderAsNumeric(bond)
-                                                   + " -> "
-                                                   + atomIndexToAddSSC2);
-                        System.out.println(isValidBondAddition);
                         if (!isValidBondAddition) {
                             allBondAdditionsAreValid = false;
                             break;
@@ -266,12 +241,10 @@ public class Assembly {
                         Signal signalToAddSSC2 = ssc2.getSpectrum()
                                                      .getSignal(ssc2.getAssignment()
                                                                     .getIndex(0, atomIndexToAddSSC2));
-                        System.out.println(signalToAddSSC2);
                         if (signalToAddSSC2
                                 != null) {
                             AssemblyUtils.addSignalToSSC(extendedSpectrum, extendedAssignment, signalToAddSSC2,
                                                          indexOfAddedAtomSSC1);
-                            System.out.println(Arrays.deepToString(extendedAssignment.getAssignments()));
                         }
                         atomIndexMap.put(indexOfAddedAtomSSC1, atomIndexToAddSSC2);
                         System.out.println("atomIndexMap new: "
@@ -281,7 +254,6 @@ public class Assembly {
                         final IAtom addedAtomInSSC2 = ssc2.getStructure()
                                                           .getAtom(atomIndexToAddSSC2);
                         if (addedAtomInSSC2.isInRing()) {
-                            System.out.println("added atom is in ring!");
                             for (final IBond bondInSSC2 : addedAtomInSSC2.bonds()) {
                                 final Integer keyBondAtom1 = utils.Utils.findKeyInMap(atomIndexMap,
                                                                                       bondInSSC2.getAtom(0)
@@ -293,17 +265,6 @@ public class Assembly {
                                         != null
                                         && keyBondAtom2
                                         != null) {
-                                    System.out.println("key 1: "
-                                                               + bondInSSC2.getAtom(0)
-                                                                           .getIndex()
-                                                               + " -> "
-                                                               + keyBondAtom1);
-                                    System.out.println("key 2: "
-                                                               + bondInSSC2.getAtom(1)
-                                                                           .getIndex()
-                                                               + " -> "
-                                                               + keyBondAtom2);
-
                                     // check whether bond does not exist
                                     if (extendedStructure.getBond(extendedStructure.getAtom(keyBondAtom1),
                                                                   extendedStructure.getAtom(keyBondAtom2))
@@ -319,7 +280,6 @@ public class Assembly {
                                                 && casekit.nmr.Utils.isValidBondAddition(extendedStructure,
                                                                                          keyBondAtom2,
                                                                                          ringClosureBond)) {
-                                            System.out.println("--> VALID RING CLOSURE BOND ADDITION");
                                             extendedStructure.addBond(ringClosureBond);
                                         }
                                     }
@@ -335,11 +295,6 @@ public class Assembly {
                                 final ConnectionTree connectionTreeToAddSSC2 = HOSECodeBuilder.buildConnectionTree(
                                         ssc2.getStructure(), connectedAtomSSC2.getIndex(), null,
                                         new HashSet<>(atomIndexMap.values()));
-                                System.out.println("tree to add for atom index "
-                                                           + connectedAtomSSC2.getIndex()
-                                                           + " in SSC2: "
-                                                           + connectionTreeToAddSSC2);
-
                                 // add atoms from tree to container
                                 HOSECodeBuilder.addToAtomContainer(connectionTreeToAddSSC2, extendedStructure,
                                                                    indexOfAddedAtomSSC1, ssc2.getStructure()
@@ -362,8 +317,6 @@ public class Assembly {
                                                               .getSignal(ssc2.getAssignment()
                                                                              .getIndex(0, nodesInSphere.get(k)
                                                                                                        .getKey()));
-                                        System.out.println("signal to add extra: "
-                                                                   + signalToAddSSC2);
                                         if (signalToAddSSC2
                                                 != null) {
                                             AssemblyUtils.addSignalToSSC(extendedSpectrum, extendedAssignment,
@@ -391,21 +344,12 @@ public class Assembly {
                                     if (extendedStructure.getBond(extendedStructure.getAtom(key1),
                                                                   extendedStructure.getAtom(key2))
                                             == null) {
-                                        System.out.println("\nadd missing bond: "
-                                                                   + key1
-                                                                   + " <-> "
-                                                                   + key2);
-
                                         bond = ssc2.getStructure()
                                                    .getBond(mappedAtomSSC2, mappedAtomNeighborSSC2)
                                                    .clone();
-
-
                                         isValidBondAddition = casekit.nmr.Utils.isValidBondAddition(extendedStructure,
                                                                                                     parentAtomIndexSSC1,
                                                                                                     bond);
-                                        System.out.println("-> is valid bond addition extra ?: "
-                                                                   + isValidBondAddition);
                                         if (isValidBondAddition) {
                                             bondToAdd = new Bond(extendedStructure.getAtom(key1),
                                                                  extendedStructure.getAtom(key2), bond.getOrder());
