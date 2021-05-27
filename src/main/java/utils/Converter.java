@@ -25,10 +25,7 @@ import model.SSC;
 import org.bson.Document;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
@@ -65,8 +62,8 @@ public class Converter {
 
 
     public static SSC jsonToSsc(final String json) {
-        final JsonObject jsonObject = new JsonParser().parse(json)
-                                                      .getAsJsonObject();
+        final JsonObject jsonObject = JsonParser.parseString(json)
+                                                .getAsJsonObject();
         return new SSC(GSON.fromJson(jsonObject.get("structure"), ExtendedConnectionMatrix.class)
                            .toAtomContainer(), GSON.fromJson(jsonObject.get("spectrum"), Spectrum.class),
                        GSON.fromJson(jsonObject.get("assignment"), Assignment.class),
@@ -90,7 +87,6 @@ public class Converter {
         System.out.println("started converting... jsonToSscList");
 
         final ConcurrentLinkedQueue<SSC> convertedSSCs = new ConcurrentLinkedQueue<>();
-        final JsonParser jsonParser = new JsonParser();
         final List<Callable<SSC>> callables = new ArrayList<>();
         // add all task to do
         br.lines()
@@ -110,8 +106,9 @@ public class Converter {
                   } else {
                       sscInJSON.append(line);
                   }
-                  callables.add(() -> Converter.jsonToSsc(jsonParser.parse(sscInJSON.substring(sscInJSON.toString()
-                                                                                                        .indexOf("{")))
+                  callables.add(() -> Converter.jsonToSsc(JsonParser.parseString(sscInJSON.substring(
+                          sscInJSON.toString()
+                                   .indexOf("{")))
                                                                     .getAsJsonObject()
                                                                     .toString()));
               }
@@ -264,5 +261,90 @@ public class Converter {
         }
 
         return queries;
+    }
+
+    public static boolean hoseCodeShiftStatisticsToJSONFile(final Map<String, Double[]> hoseCodeShifts,
+                                                            final String pathToJsonFile) {
+        try {
+            System.out.println("started converting... hoseCodeShiftsToJSONFile");
+            final BufferedWriter bw = new BufferedWriter(new FileWriter(pathToJsonFile));
+            bw.append("{");
+            bw.newLine();
+            bw.flush();
+
+            Document subDocument;
+            String json;
+            long counter = 0;
+            for (final Map.Entry<String, Double[]> entry : hoseCodeShifts.entrySet()) {
+                subDocument = new Document();
+                subDocument.append("HOSECode", entry.getKey());
+                subDocument.append("values", GSON.toJson(entry.getValue()));
+                json = Converter.documentToJson(new Document(String.valueOf(counter), subDocument));
+                bw.append(json, 1, json.length()
+                        - 1);
+                if (counter
+                        < hoseCodeShifts.size()
+                        - 1) {
+                    bw.append(",");
+                }
+                bw.newLine();
+                bw.flush();
+
+                counter++;
+            }
+
+            bw.append("}");
+            bw.flush();
+            bw.close();
+
+            System.out.println("all converted");
+
+            return true;
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public static Map<String, Double[]> jsonFileToHOSECodeShiftStatistics(
+            final String pathToJsonFile) throws FileNotFoundException {
+        return Converter.jsonToHOSECodeShiftStatistics(new BufferedReader(new FileReader(pathToJsonFile)));
+    }
+
+    private static Map<String, Double[]> jsonToHOSECodeShiftStatistics(final BufferedReader br) {
+        System.out.println("started converting... jsonToHOSECodeShiftStatistics");
+        final Map<String, Double[]> hoseCodeShiftStatistics = new HashMap<>();
+        // add all task to do
+        br.lines()
+          .forEach(line -> {
+              if ((line.trim()
+                       .length()
+                      > 1)
+                      || (!line.trim()
+                               .startsWith("{")
+                      && !line.trim()
+                              .endsWith("}"))) {
+                  final StringBuilder hoseCodeShiftsStatisticInJSON = new StringBuilder();
+                  if (line.endsWith(",")) {
+                      hoseCodeShiftsStatisticInJSON.append(line, 0, line.length()
+                              - 1);
+                  } else {
+                      hoseCodeShiftsStatisticInJSON.append(line);
+                  }
+                  final JsonObject jsonObject = JsonParser.parseString(hoseCodeShiftsStatisticInJSON.substring(
+                          hoseCodeShiftsStatisticInJSON.toString()
+                                                       .indexOf("{")))
+                                                          .getAsJsonObject();
+                  hoseCodeShiftStatistics.put(jsonObject.get("HOSECode")
+                                                        .getAsString(), GSON.fromJson(jsonObject.get("values")
+                                                                                                .getAsString(),
+                                                                                      new TypeToken<Double[]>() {
+                                                                                      }.getType()));
+              }
+          });
+        System.out.println("all converted");
+
+        return hoseCodeShiftStatistics;
     }
 }
