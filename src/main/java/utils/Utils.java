@@ -138,26 +138,46 @@ public class Utils {
         return heteroAtomCount;
     }
 
-    public static Map<String, Double[]> buildHOSECodeShiftStatistics(final List<SSC> sscList) {
+    public static Map<String, Double[]> buildHOSECodeShiftStatistics(final List<SSC> sscList, final Integer maxSphere) {
         final Map<String, List<Double>> hoseCodeShifts = new HashMap<>();
         Signal signal;
+        String hoseCode;
         for (final SSC ssc : sscList) {
-            signal = ssc.getSpectrum()
-                        .getSignal(ssc.getAssignment()
-                                      .getIndex(0, 0));
-            if (signal
-                    != null) {
-                hoseCodeShifts.putIfAbsent(ssc.getHoseCodes()
-                                              .get(0), new ArrayList<>());
-                hoseCodeShifts.get(ssc.getHoseCodes()
-                                      .get(0))
-                              .add(signal.getShift(0));
+            for (int i = 0; i
+                    < ssc.getStructure()
+                         .getAtomCount(); i++) {
+                signal = ssc.getSpectrum()
+                            .getSignal(ssc.getAssignment()
+                                          .getIndex(0, i));
+                if (signal
+                        != null) {
+                    try {
+                        if (maxSphere
+                                != null) {
+                            for (int sphere = 0; sphere
+                                    <= maxSphere; sphere++) {
+                                hoseCode = HOSECodeBuilder.buildHOSECode(ssc.getStructure(), i, sphere, false);
+                                hoseCodeShifts.putIfAbsent(hoseCode, new ArrayList<>());
+                                hoseCodeShifts.get(hoseCode)
+                                              .add(signal.getShift(0));
+                            }
+                        }
+                        hoseCode = HOSECodeBuilder.buildHOSECode(ssc.getStructure(), i, null, false);
+                        hoseCodeShifts.putIfAbsent(hoseCode, new ArrayList<>());
+                        hoseCodeShifts.get(hoseCode)
+                                      .add(signal.getShift(0));
+                    } catch (final CDKException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
         final Map<String, Double[]> hoseCodeShiftStatistics = new HashMap<>();
         for (final Map.Entry<String, List<Double>> shifts : hoseCodeShifts.entrySet()) {
-            hoseCodeShiftStatistics.put(shifts.getKey(), new Double[]{Collections.min(shifts.getValue()),
-                                                                      casekit.nmr.Utils.getMean(shifts.getValue()),
+            hoseCodeShiftStatistics.put(shifts.getKey(), new Double[]{Double.valueOf(shifts.getValue()
+                                                                                           .size()),
+                                                                      Collections.min(shifts.getValue()),
+                                                                      casekit.nmr.Utils.getRMS(shifts.getValue()),
                                                                       casekit.nmr.Utils.getMedian(shifts.getValue()),
                                                                       Collections.max(shifts.getValue())});
         }
