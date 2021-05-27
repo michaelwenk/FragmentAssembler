@@ -6,10 +6,9 @@ import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
 import casekit.nmr.utils.Match;
 import model.SSC;
-import org.openscience.cdk.aromaticity.Kekulization;
-import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
+import org.openscience.cdk.interfaces.IBond;
 import org.openscience.cdk.interfaces.IMolecularFormula;
 import org.openscience.cdk.tools.manipulator.MolecularFormulaManipulator;
 
@@ -83,19 +82,22 @@ public class AssemblyUtils {
             atom = substructure.getAtom(i);
             // @TODO include different valencies: N3, N5, S2, S4, S6 etc.
             // -1 for cases with heterocyclic aromatics, like the N in the small aromatic ring in coffein if we want to add the bond to the CH3 group
-            if (atom.isAromatic()
-                    && (atom.getSymbol()
-                            .equals("N")
-                    || atom.getSymbol()
-                           .equals("S")
-                    || atom.getSymbol()
-                           .equals("P"))) {
-                //            System.out.print("[ -1 ]");
-                bondOrderSum -= 1;
+            if (atom.isAromatic()) {
+                if (!atom.getSymbol()
+                         .equals("C")) {
+                    bondOrderSum -= 1;
+                } else {
+                    if (substructure.getConnectedBondsList(atom)
+                                    .stream()
+                                    .anyMatch(bond -> !bond.isAromatic()
+                                            && bond.getOrder()
+                                                   .equals(IBond.Order.DOUBLE))) {
+                        bondOrderSum -= 1;
+                    }
+                }
             }
             if (bondOrderSum
-                    > substructure.getAtom(i)
-                                  .getValency()) {
+                    > atom.getValency()) {
                 return false;
             }
         }
@@ -134,25 +136,34 @@ public class AssemblyUtils {
         }
         final IMolecularFormula molecularFormula = casekit.nmr.utils.Utils.getMolecularFormulaFromString(mf);
         System.out.println("MF vs. atom count: "
-                                   + ((molecularFormula
+                                   + (molecularFormula
                 != null)
-                && (MolecularFormulaManipulator.getAtomCount(molecularFormula)
+                                   + " && "
+                                   + MolecularFormulaManipulator.getAtomCount(molecularFormula)
+                                   + " != "
+                                   + MolecularFormulaManipulator.getAtomCount(
+                MolecularFormulaManipulator.getMolecularFormula(ssc.getStructure()))
+                                   + " = "
+                                   + (molecularFormula
+                != null
+                && MolecularFormulaManipulator.getAtomCount(molecularFormula)
                 != MolecularFormulaManipulator.getAtomCount(
-                MolecularFormulaManipulator.getMolecularFormula(ssc.getStructure())))));
-        if ((molecularFormula
-                != null)
-                && (MolecularFormulaManipulator.getAtomCount(molecularFormula)
+                MolecularFormulaManipulator.getMolecularFormula(ssc.getStructure()))));
+        if (molecularFormula
+                != null
+                && MolecularFormulaManipulator.getAtomCount(molecularFormula)
                 != MolecularFormulaManipulator.getAtomCount(
-                MolecularFormulaManipulator.getMolecularFormula(ssc.getStructure())))) {
+                MolecularFormulaManipulator.getMolecularFormula(ssc.getStructure()))) {
             return false;
         }
-        try {
-            Kekulization.kekulize(ssc.getStructure());
-            System.out.println("kekulization? -> true");
-        } catch (final CDKException e) {
-            System.out.println("kekulization? -> false");
-            return false;
-        }
+        //        try {
+        //            Kekulization.kekulize(ssc.getStructure());
+        //            System.out.println("kekulization? -> true");
+        //        } catch (final CDKException e) {
+        //            System.out.println("kekulization? -> false");
+        //            return false;
+        //        }
+        System.out.println(" -> final");
 
         return true;
     }
