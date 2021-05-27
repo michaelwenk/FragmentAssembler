@@ -69,28 +69,8 @@ public class Fragmentation {
      */
     public static List<SSC> buildSSCCollection(final IAtomContainer structure, final Spectrum spectrum,
                                                final Assignment assignment, final int maxSphere) throws CDKException {
-        // if the structure contains explicit hydrogens atoms then, after
-        // removing them, the assignments have to be corrected
+        // if the structure contains explicit hydrogens then ignore that molecule
         if (casekit.nmr.Utils.containsExplicitHydrogens(structure)) {
-            //            final Map<IAtom, Integer> prevAtomIndices = casekit.nmr.Utils.convertExplicitToImplicitHydrogens(structure);
-            //            for (final IAtom atom : prevAtomIndices.keySet()) {
-            //                // consider only atoms with same atom type as first spectrum nucleus type
-            //                if (!atom.getSymbol()
-            //                         .equals(Utils.getAtomTypeFromSpectrum(spectrum, 0))) {
-            //                    continue;
-            //                }
-            //                for (int i = 0; i
-            //                        < structure.getAtomCount(); i++) {
-            //                    if ((structure.getAtom(i)
-            //                            == atom)
-            //                            && (i
-            //                            != prevAtomIndices.get(atom))) {
-            //                        assignment.setAssignment(0, assignment.getIndex(0, prevAtomIndices.get(atom)), new int[]{i});
-            //                        break;
-            //                    }
-            //                }
-            //            }
-
             return new ArrayList<>();
         }
         final List<SSC> sscCollection = new ArrayList<>();
@@ -143,15 +123,16 @@ public class Fragmentation {
         subassignment.setNuclei(spectrum.getNuclei());
         subassignment.initAssignments(subspectrum.getSignalCount());
         IAtom atomInStructure;
+        final String spectrumAtomType = Utils.getAtomTypeFromSpectrum(subspectrum, 0);
         for (int j = 0; j
                 < substructure.getAtomCount(); j++) {
             atomInStructure = structure.getAtom(substructureAtomIndices.get(j));
             if (atomInStructure.getSymbol()
-                               .equals(Utils.getAtomTypeFromSpectrum(subspectrum, 0))) {
-                if ((assignment.getIndex(0, substructureAtomIndices.get(j))
-                        == null)
-                        || (spectrum.getSignal(assignment.getIndex(0, substructureAtomIndices.get(j)))
-                        == null)) {
+                               .equals(spectrumAtomType)) {
+                if (assignment.getIndex(0, substructureAtomIndices.get(j))
+                        == null
+                        || spectrum.getSignal(assignment.getIndex(0, substructureAtomIndices.get(j)))
+                        == null) {
                     return null;
                 }
                 AssemblyUtils.addSignalToSSC(subspectrum, subassignment,
@@ -202,7 +183,7 @@ public class Fragmentation {
      * @see HOSECodeBuilder#buildConnectionTree(IAtomContainer, int, Integer)
      */
     public static List<Integer> buildSubstructureAtomIndicesList(final IAtomContainer structure,
-                                                                 final int rootAtomIndex, final int maxSphere) {
+                                                                 final int rootAtomIndex, final Integer maxSphere) {
         return HOSECodeBuilder.buildConnectionTree(structure, rootAtomIndex, maxSphere)
                               .getKeys();
     }
