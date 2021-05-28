@@ -39,7 +39,7 @@ public class FragmentAssembler {
         final double matchFactorThrs = 4;
         final int nThreads = 3;
         //        List<SSC> sscList = Fragmentation.buildFromNMRShiftDB("/Users/mwenk/Downloads/test.sd", new String[]{"13C"},
-        //                                                                    maxSphere, nThreads);
+        //                                                              maxSphere, nThreads);
         //        List<SSC> sscList = Fragmentation.buildFromNMRShiftDB("/Users/mwenk/Downloads/nmrshiftdb2withsignals.sd",
         //                                                              new String[]{"13C"}, maxSphere, nThreads);
         List<SSC> sscList = new ArrayList<>();
@@ -57,16 +57,24 @@ public class FragmentAssembler {
             e.printStackTrace();
         }
 
-        //        final Map<String, Double[]> hoseCodeShiftStatistics = Utils.buildHOSECodeShiftStatistics(sscList);
-        //        System.out.println("statistics:\n");
-        //        for (final Map.Entry<String, Double[]> stringEntry : hoseCodeShiftStatistics.entrySet()) {
-        //            System.out.println(stringEntry.getKey()
-        //                                       + ": "
-        //                                       + Arrays.toString(stringEntry.getValue()));
+        //        Map<String, Map<String, Double[]>> hoseCodeShiftStatistics = new HashMap<>();
+        //        hoseCodeShiftStatistics = Utils.buildHOSECodeShiftStatistics(sscList, maxSphere);
+        //        final String pathToHOSECodeShiftStatistics = "/Users/mwenk/Downloads/jsonToHOSECodeShiftStatistics_3.json";
+        //        Converter.hoseCodeShiftStatisticsToJSONFile(hoseCodeShiftStatistics, pathToHOSECodeShiftStatistics);
+        //        try {
+        //            hoseCodeShiftStatistics = Converter.jsonFileToHOSECodeShiftStatistics(pathToHOSECodeShiftStatistics);
+        //        } catch (final FileNotFoundException e) {
+        //            hoseCodeShiftStatistics = new HashMap<>();
+        //            e.printStackTrace();
         //        }
 
         sscList = sscList.parallelStream()
                          .filter(ssc -> {
+                             if (!ssc.getSpectrum()
+                                     .getSolvent()
+                                     .equals(querySpectrum.getSolvent())) {
+                                 return false;
+                             }
                              if (!AssemblyUtils.compareWithMolecularFormula(ssc.getStructure(), mf)) {
                                  return false;
                              }
