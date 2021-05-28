@@ -90,7 +90,6 @@ public class Converter {
         final List<Callable<SSC>> callables = new ArrayList<>();
         // add all task to do
         br.lines()
-          .parallel()
           .forEach(line -> {
               if ((line.trim()
                        .length()

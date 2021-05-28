@@ -54,15 +54,14 @@ public class Utils {
     }
 
     public static void removeDuplicatesFromSSCList(final List<SSC> sscList, final Set<String> smilesSet) {
-        final List<SSC> toRemove = new ArrayList<>();
         String smiles;
-        for (final SSC ssc : sscList) {
+        for (final SSC ssc : new ArrayList<>(sscList)) {
             try {
                 smiles = smilesGenerator.create(ssc.getStructure());
-                if (!smilesSet.contains(smilesSet)) {
+                if (!smilesSet.contains(smiles)) {
                     smilesSet.add(smiles);
                 } else {
-                    toRemove.add(ssc);
+                    sscList.remove(ssc);
                 }
             } catch (final CDKException e) {
                 e.printStackTrace();
