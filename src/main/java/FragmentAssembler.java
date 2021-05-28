@@ -109,6 +109,26 @@ public class FragmentAssembler {
         System.out.println("\nfiltered SSC count: "
                                    + sscList.size());
 
+        final List<SSC> startSSCList = sscList.stream()
+                                              .filter(ssc -> !(ssc.getUnsaturatedAtomIndices()
+                                                                  .isEmpty()
+                                                      && ssc.getSpectrum()
+                                                            .getSignalCountWithEquivalences()
+                                                      != querySpectrum.getSignalCountWithEquivalences()))
+                                              .collect(Collectors.toList());
+        System.out.println("\nvalid start SSC count: "
+                                   + startSSCList.size());
+        // prepared for possible start SSC selection
+        final List<Integer> startSSCIndices = new ArrayList<>();
+        for (int i = 0; i
+                < startSSCList.size(); i++) {
+            if (i
+                    >= nStarts) {
+                break;
+            }
+            startSSCIndices.add(i);
+        }
+
         final DepictionGenerator depictionGenerator = new DepictionGenerator().withAtomColors()
                                                                               .withAtomNumbers()
                                                                               .withAromaticDisplay()
@@ -116,12 +136,12 @@ public class FragmentAssembler {
                                                                               .withFillToFit();
         //        try {
         //            for (int i = 0; i
-        //                    < sscList.size()
+        //                    < startSSCList.size()
         //                    && i
         //                    < 100; i++) {
         //                //                            < sscList.size(); i++) {
-        //                depictionGenerator.depict(sscList.get(i)
-        //                                                 .getStructure())
+        //                depictionGenerator.depict(startSSCList.get(i)
+        //                                                      .getStructure())
         //                                  .writeTo("/Users/mwenk/Downloads/depictions/ssc"
         //                                                   + i
         //                                                   + ".png");
@@ -129,13 +149,6 @@ public class FragmentAssembler {
         //        } catch (final CDKException | IOException e) {
         //            e.printStackTrace();
         //        }
-
-        // prepared for possible start SSC selection
-        final List<Integer> startSSCIndices = new ArrayList<>();
-        for (int i = 0; i
-                < nStarts; i++) {
-            startSSCIndices.add(i);
-        }
 
         final SmilesGenerator smilesGenerator = new SmilesGenerator(SmiFlavor.Absolute);
         final Map<String, SSC> solutions = new HashMap<>();
@@ -148,7 +161,7 @@ public class FragmentAssembler {
         boolean stop;
         for (final int i : startSSCIndices) {
             intermediates = new Stack<>();
-            intermediates.push(new Object[]{sscList.get(i).buildClone(), i, 0});
+            intermediates.push(new Object[]{startSSCList.get(i).buildClone(), i, 0});
 
             while (!intermediates.empty()) {
                 stackItem = intermediates.pop();
