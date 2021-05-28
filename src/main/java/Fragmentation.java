@@ -110,6 +110,14 @@ public class Fragmentation {
      */
     public static SSC buildSSC(final IAtomContainer structure, final Spectrum spectrum, final Assignment assignment,
                                final int rootAtomIndex, final int maxSphere) throws CDKException {
+        if (spectrum.getSolvent()
+                == null
+                || spectrum.getSolvent()
+                           .equals("Unreported")
+                || spectrum.getSolvent()
+                           .equals("Unknown")) {
+            return null;
+        }
         casekit.nmr.Utils.setAromaticityAndKekulize(structure);
         final List<Integer> substructureAtomIndices = Fragmentation.buildSubstructureAtomIndicesList(structure,
                                                                                                      rootAtomIndex,
