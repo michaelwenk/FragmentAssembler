@@ -68,7 +68,7 @@ public class FragmentAssembler {
         //            e.printStackTrace();
         //        }
 
-        sscList = sscList.parallelStream()
+        sscList = sscList.stream()
                          .filter(ssc -> {
                              if (!ssc.getSpectrum()
                                      .getSolvent()
@@ -191,6 +191,7 @@ public class FragmentAssembler {
                 }
                 if (!extendedSSCList.isEmpty()) {
                     Utils.sortSSCList(extendedSSCList, querySpectrum, shiftTol);
+                    // remove duplicates after sorting since we do not check the spectral similarities when removing them
                     Utils.removeDuplicatesFromSSCList(extendedSSCList, new HashSet<>());
                     Collections.reverse(extendedSSCList);
                     for (final SSC extendedSSC : extendedSSCList) {
