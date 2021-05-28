@@ -178,7 +178,7 @@ public class FragmentAssembler {
                 }
                 if (!extendedSSCList.isEmpty()) {
                     Utils.sortSSCList(extendedSSCList, querySpectrum, shiftTol);
-                    Utils.removeDuplicatesFromSSCList(sscList, new HashSet<>());
+                    Utils.removeDuplicatesFromSSCList(extendedSSCList, new HashSet<>());
                     Collections.reverse(extendedSSCList);
                     for (final SSC extendedSSC : extendedSSCList) {
                         if (AssemblyUtils.isFinalSSC(extendedSSC, querySpectrum, shiftTol, matchFactorThrs, mf)) {
