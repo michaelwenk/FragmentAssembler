@@ -70,11 +70,11 @@ public class FragmentAssembler {
 
         sscList = sscList.stream()
                          .filter(ssc -> {
-                             if (!ssc.getSpectrum()
-                                     .getSolvent()
-                                     .equals(querySpectrum.getSolvent())) {
-                                 return false;
-                             }
+                             //                             if (!ssc.getSpectrum()
+                             //                                     .getSolvent()
+                             //                                     .equals(querySpectrum.getSolvent())) {
+                             //                                 return false;
+                             //                             }
                              if (!AssemblyUtils.compareWithMolecularFormula(ssc.getStructure(), mf)) {
                                  return false;
                              }
