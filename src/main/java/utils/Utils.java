@@ -67,12 +67,10 @@ public class Utils {
                 e.printStackTrace();
             }
         }
-        sscList.removeAll(toRemove);
     }
 
     public static void sortSSCList(final List<SSC> sscList, final Spectrum querySpectrum, final double shiftTol) {
         sscList.sort((ssc1, ssc2) -> {
-
             final Assignment matchAssignmentSSC1 = Match.matchSpectra(ssc1.getSpectrum(), querySpectrum, 0, 0, shiftTol,
                                                                       true, true, true);
             final Assignment matchAssignmentSSC2 = Match.matchSpectra(ssc2.getSpectrum(), querySpectrum, 0, 0, shiftTol,
@@ -89,6 +87,10 @@ public class Utils {
                     * Integer.compare(ssc1.getStructure()
                                           .getAtomCount(), ssc2.getStructure()
                                                                .getAtomCount());
+            if (atomCountComparison
+                    != 0) {
+                return atomCountComparison;
+            }
 
             final Double rmsdSSC1 = Match.calculateRMSD(ssc1.getSpectrum(), querySpectrum, 0, 0, shiftTol, true, true,
                                                         true);
@@ -106,21 +108,40 @@ public class Utils {
                 }
             }
 
-            if (atomCountComparison
-                    != 0) {
-                return atomCountComparison;
-            }
-            // consider number of open sites
-            final int openSitesCountComparison = Integer.compare(ssc1.getUnsaturatedAtomIndices()
-                                                                     .size(), ssc2.getUnsaturatedAtomIndices()
-                                                                                  .size());
-            if (openSitesCountComparison
-                    != 0) {
-                return openSitesCountComparison;
-            }
+            //                        int ringAtomCountSSC1 = 0;
+            //                        for (final IAtom atom : ssc1.getStructure()
+            //                                                    .atoms()) {
+            //                            if (atom.isInRing()) {
+            //                                ringAtomCountSSC1++;
+            //                            }
+            //                        }
+            //                        int ringAtomCountSSC2 = 0;
+            //                        for (final IAtom atom : ssc2.getStructure()
+            //                                                    .atoms()) {
+            //                            if (atom.isInRing()) {
+            //                                ringAtomCountSSC2++;
+            //                            }
+            //                        }
+            //                        final int ringAtomCountComparison = -1
+            //                                * Integer.compare(ringAtomCountSSC1, ringAtomCountSSC2);
+            //                        if (ringAtomCountComparison
+            //                                != 0) {
+            //                            return ringAtomCountComparison;
+            //                        }
+            //
+            //                        // consider number of open sites
+            //                        final int openSitesCountComparison = Integer.compare(ssc1.getUnsaturatedAtomIndices()
+            //                                                                                 .size(), ssc2.getUnsaturatedAtomIndices()
+            //                                                                                              .size());
+            //                        if (openSitesCountComparison
+            //                                != 0) {
+            //                            return openSitesCountComparison;
+            //                        }
+            //
+            //                        return Integer.compare(Utils.countHeteroAtoms(ssc1.getStructure()),
+            //                                               Utils.countHeteroAtoms(ssc2.getStructure()));
 
-            return Integer.compare(Utils.countHeteroAtoms(ssc1.getStructure()),
-                                   Utils.countHeteroAtoms(ssc2.getStructure()));
+            return 0;
         });
     }
 
