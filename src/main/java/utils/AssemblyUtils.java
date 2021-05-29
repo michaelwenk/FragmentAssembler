@@ -1,11 +1,14 @@
 package utils;
 
 import casekit.nmr.Utils;
+import casekit.nmr.hose.HOSECodeBuilder;
+import casekit.nmr.hose.model.ConnectionTree;
 import casekit.nmr.model.Assignment;
 import casekit.nmr.model.Signal;
 import casekit.nmr.model.Spectrum;
 import casekit.nmr.utils.Match;
 import model.SSC;
+import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IBond;
@@ -47,8 +50,8 @@ public class AssemblyUtils {
                                              final double shiftTol, final double matchFactorThrs) {
         if ((spectrum
                 == null)
-                || (spectrum.getSignalCount()
-                > querySpectrum.getSignalCount())) {
+                || (spectrum.getSignalCountWithEquivalences()
+                > querySpectrum.getSignalCountWithEquivalences())) {
             System.out.println("-> subspectrum == null or signal count subspectrum > signal count query spectrum!!!");
             return false;
         }
@@ -177,17 +180,40 @@ public class AssemblyUtils {
             return maxMatchingSphere;
         }
 
-        final List<String> HOSECodeSpheresSSC1 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
-                                                                                                     .get(atomIndexSSC1));
-        final List<String> HOSECodeSpheresSSC2 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
-                                                                                                     .get(atomIndexSSC2));
+        //        final List<String> HOSECodeSpheresSSC1 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc1.getHoseCodes()
+        //                                                                                                     .get(atomIndexSSC1));
+        //        final List<String> HOSECodeSpheresSSC2 = casekit.nmr.hose.Utils.splitHOSECodeIntoSpheres(ssc2.getHoseCodes()
+        //                                                                                                     .get(atomIndexSSC2));
+        //        for (int s = 0; s
+        //                < Integer.min(HOSECodeSpheresSSC1.size(), HOSECodeSpheresSSC2.size()); s++) {
+        //            if (!HOSECodeSpheresSSC1.get(s)
+        //                                    .equals(HOSECodeSpheresSSC2.get(s))) {
+        //                break;
+        //            }
+        //            maxMatchingSphere = s;
+        //        }
+
+        final ConnectionTree connectionTreeSSC1 = HOSECodeBuilder.buildConnectionTree(ssc1.getStructure(),
+                                                                                      atomIndexSSC1, null);
+        final int maxTreeSphere = connectionTreeSSC1.getNodesInSphere(connectionTreeSSC1.getMaxSphere(), false)
+                                                    .isEmpty()
+                                  ? connectionTreeSSC1.getMaxSphere()
+                                          - 1
+                                  : connectionTreeSSC1.getMaxSphere();
+        String hoseCodeSSC1, hoseCodeSSC2;
         for (int s = 0; s
-                < Integer.min(HOSECodeSpheresSSC1.size(), HOSECodeSpheresSSC2.size()); s++) {
-            if (!HOSECodeSpheresSSC1.get(s)
-                                    .equals(HOSECodeSpheresSSC2.get(s))) {
-                break;
+                < maxTreeSphere; s++) {
+            try {
+                hoseCodeSSC1 = HOSECodeBuilder.buildHOSECode(ssc1.getStructure(), atomIndexSSC1, s, false);
+                hoseCodeSSC2 = HOSECodeBuilder.buildHOSECode(ssc2.getStructure(), atomIndexSSC2, s, false);
+                if (!hoseCodeSSC1.equals(hoseCodeSSC2)) {
+                    return maxMatchingSphere;
+                }
+                maxMatchingSphere++;
+            } catch (final CDKException e) {
+                e.printStackTrace();
+                return -1;
             }
-            maxMatchingSphere = s;
         }
 
         return maxMatchingSphere;
@@ -264,5 +290,41 @@ public class AssemblyUtils {
                 assignment.addAssignmentEquivalence(0, signalIndex, atomIndex);
             }
         }
+    }
+
+    public static void sortExtendedSSCList(final List<SSC> extendedSSCList) {
+        extendedSSCList.sort((extendedSSC1, extendedSSC2) -> {
+            int ringBondCountSSC1 = 0;
+            for (final IBond bond : extendedSSC1.getStructure()
+                                                .bonds()) {
+                if (bond.isInRing()) {
+                    ringBondCountSSC1++;
+                }
+            }
+            int ringBondCountSSC2 = 0;
+            for (final IBond bond : extendedSSC2.getStructure()
+                                                .bonds()) {
+                if (bond.isInRing()) {
+                    ringBondCountSSC2++;
+                }
+            }
+            final int ringBondCountComparison = -1
+                    * Integer.compare(ringBondCountSSC1, ringBondCountSSC2);
+            if (ringBondCountComparison
+                    != 0) {
+                return ringBondCountComparison;
+            }
+
+            final int atomCountComparison = -1
+                    * Integer.compare(extendedSSC1.getStructure()
+                                                  .getAtomCount(), extendedSSC2.getStructure()
+                                                                               .getAtomCount());
+            if (atomCountComparison
+                    != 0) {
+                return atomCountComparison;
+            }
+
+            return 0;
+        });
     }
 }
