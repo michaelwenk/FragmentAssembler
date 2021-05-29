@@ -5,15 +5,15 @@ import model.Query;
 import model.SSC;
 import org.openscience.cdk.depict.DepictionGenerator;
 import org.openscience.cdk.exception.CDKException;
-import org.openscience.cdk.smiles.SmiFlavor;
-import org.openscience.cdk.smiles.SmilesGenerator;
 import utils.AssemblyUtils;
 import utils.Converter;
 import utils.Utils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FragmentAssembler {
@@ -32,11 +32,11 @@ public class FragmentAssembler {
         System.out.println(querySpectrum);
         System.out.println(mf);
 
-        final int nStarts = 1;
-        final int maxSphere = 3;
-        final int minMatchingSphereCount = 1;
-        final double shiftTol = 5;
-        final double matchFactorThrs = 4;
+        final int nStarts = 20;
+        final int maxSphere = 4;
+        final int minMatchingSphere = 1;
+        final double shiftTol = 10;
+        final double matchFactorThrs = 7;
         final int nThreads = 3;
         //        List<SSC> sscList = Fragmentation.buildFromNMRShiftDB("/Users/mwenk/Downloads/test.sd", new String[]{"13C"},
         //                                                              maxSphere, nThreads);
@@ -44,8 +44,9 @@ public class FragmentAssembler {
         //                                                              new String[]{"13C"}, maxSphere, nThreads);
         List<SSC> sscList = new ArrayList<>();
 
-        final String pathToJsonFile = "/Users/mwenk/Downloads/sscList.json";
+        //        final String pathToJsonFile = "/Users/mwenk/Downloads/sscList.json";
         //        final String pathToJsonFile = "/Users/mwenk/Downloads/sscList_all_3.json";
+        final String pathToJsonFile = "/Users/mwenk/Downloads/sscList_all_4.json";
         //        Converter.sscListToJSONFile(sscList, pathToJsonFile);
 
         try {
@@ -120,6 +121,8 @@ public class FragmentAssembler {
                                    + startSSCList.size());
         // prepared for possible start SSC selection
         final List<Integer> startSSCIndices = new ArrayList<>();
+        //        sscList = startSSCList.subList(1, 2);
+        //        startSSCIndices.add(0);
         for (int i = 0; i
                 < startSSCList.size(); i++) {
             if (i
@@ -134,117 +137,27 @@ public class FragmentAssembler {
                                                                               .withAromaticDisplay()
                                                                               .withSize(512, 512)
                                                                               .withFillToFit();
-        //        try {
-        //            for (int i = 0; i
-        //                    < startSSCList.size()
-        //                    && i
-        //                    < 100; i++) {
-        //                //                            < sscList.size(); i++) {
-        //                depictionGenerator.depict(startSSCList.get(i)
-        //                                                      .getStructure())
-        //                                  .writeTo("/Users/mwenk/Downloads/depictions/ssc"
-        //                                                   + i
-        //                                                   + ".png");
-        //            }
-        //        } catch (final CDKException | IOException e) {
-        //            e.printStackTrace();
-        //        }
-
-        final SmilesGenerator smilesGenerator = new SmilesGenerator(SmiFlavor.Absolute);
-        final Map<String, SSC> solutions = new HashMap<>();
-        Stack<Object[]> intermediates;
-        Object[] stackItem;
-        SSC intermediate;
-        int currentSSCIndex, startSSCIndex;
-        List<SSC> extendedSSCList;
-        String smiles;
-        boolean stop;
-        for (final int i : startSSCIndices) {
-            intermediates = new Stack<>();
-            intermediates.push(new Object[]{startSSCList.get(i).buildClone(), i, 0});
-
-            while (!intermediates.empty()) {
-                stackItem = intermediates.pop();
-                intermediate = (SSC) stackItem[0];
-                startSSCIndex = (int) stackItem[1];
-                currentSSCIndex = ((int) stackItem[2]);
-
-                if (currentSSCIndex
-                        >= sscList.size()) {
-                    continue;
-                }
-                stop = false;
-                extendedSSCList = new ArrayList<>();
-                for (int j = currentSSCIndex; j
-                        < sscList.size(); j++) {
-                    if (j
-                            == startSSCIndex) {
-                        continue;
-                    }
-                    //                    System.out.println("\n\n--> ssc pair: "
-                    //                                               + startSSCIndex
-                    //                                               + " vs. "
-                    //                                               + j);
-                    extendedSSCList.addAll(
-                            Assembly.assemblyOverlaps(intermediate, sscList.get(j), querySpectrum, mf, null,//maxSphere,
-                                                      shiftTol, matchFactorThrs, minMatchingSphereCount));
-                }
-                if (!extendedSSCList.isEmpty()) {
-                    Utils.sortSSCList(extendedSSCList, querySpectrum, shiftTol);
-                    // remove duplicates after sorting since we do not check the spectral similarities when removing them
-                    Utils.removeDuplicatesFromSSCList(extendedSSCList, new HashSet<>());
-                    Collections.reverse(extendedSSCList);
-                    for (final SSC extendedSSC : extendedSSCList) {
-                        if (AssemblyUtils.isFinalSSC(extendedSSC, querySpectrum, shiftTol, matchFactorThrs, mf)) {
-                            try {
-                                smiles = smilesGenerator.create(extendedSSC.getStructure());
-                                solutions.putIfAbsent(smiles, extendedSSC);
-                                try {
-                                    depictionGenerator.depict(extendedSSC.getStructure())
-                                                      .writeTo("/Users/mwenk/Downloads/depictions/final_"
-                                                                       + startSSCIndex
-                                                                       + "-"
-                                                                       + currentSSCIndex
-                                                                       + "_"
-                                                                       + smiles
-                                                                       + ".png");
-                                } catch (final IOException | CDKException e) {
-                                    e.printStackTrace();
-                                }
-                                stop = true;
-                            } catch (final CDKException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            //                            try {
-                            //                                smiles = smilesGenerator.create(extendedSSC.getStructure());
-                            //                                depictionGenerator.depict(extendedSSC.getStructure())
-                            //                                                  .writeTo("/Users/mwenk/Downloads/depictions/extended_"
-                            //                                                                   + startSSCIndex
-                            //                                                                   + "-"
-                            //                                                                   + currentSSCIndex
-                            //                                                                   + "_"
-                            //                                                                   + smiles
-                            //                                                                   + "_"
-                            //                                                                   + extendedSSC.getUnsaturatedAtomIndices()
-                            //                                                                   + ".png");
-                            //                            } catch (final IOException | CDKException e) {
-                            //                                e.printStackTrace();
-                            //                            }
-
-                            intermediates.push(new Object[]{extendedSSC.buildClone(), startSSCIndex, currentSSCIndex
-                                    + 1});
-                        }
-                    }
-                } else {
-                    intermediates.push(new Object[]{intermediate, startSSCIndex, currentSSCIndex
-                            + 1});
-                }
-                if (stop) {
-                    break;
-                }
+        try {
+            for (int i = 0; i
+                    < startSSCList.size()
+                    && i
+                    < 100; i++) {
+                //                            < startSSCList.size(); i++) {
+                depictionGenerator.depict(startSSCList.get(i)
+                                                      .getStructure())
+                                  .writeTo("/Users/mwenk/Downloads/depictions/ssc"
+                                                   + i
+                                                   + ".png");
             }
+        } catch (final CDKException | IOException e) {
+            e.printStackTrace();
         }
+
+        //        final Map<String, SSC> solutions = Assembly.assembleWithBacktracking(sscList, querySpectrum, mf, shiftTol,
+        //                                                                             matchFactorThrs, minMatchingSphere,
+        //                                                                             nStarts);
+        final Map<String, SSC> solutions = Assembly.assembleSequentially(sscList, querySpectrum, mf, shiftTol,
+                                                                         matchFactorThrs, minMatchingSphere, nStarts);
 
         System.out.println("\n\nsolutions:\n"
                                    + solutions.keySet());
